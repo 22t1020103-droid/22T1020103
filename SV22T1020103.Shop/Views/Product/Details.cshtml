@@ -18,7 +18,7 @@
             @* SỬA: CategoryName thành CategoryID (hoặc để trống nếu chưa Join) *@
             <span class="badge bg-info text-dark mb-3">Mã loại: @Model?.CategoryID</span>
 
-            <h3 class="text-danger">@Model?.Price.ToString("N0") VNĐ</h3>
+            <h3 class="text-danger">@Model?.Price.ToString("N0", new System.Globalization.CultureInfo("vi-VN")) VNĐ</h3>
             <hr />
 
             @* SỬA: Model.Description thành Model.ProductDescription *@

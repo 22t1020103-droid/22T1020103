@@ -206,11 +206,11 @@ namespace SV22T1020103.Admin.Controllers
         }
 
         [HttpPost]
-        public IActionResult UpdateCartItem(int productID, int quantity, decimal salePrice)
+        public IActionResult UpdateCartItem(int ProductID, int Quantity, decimal SalePrice)
         {
-            if (quantity <= 0) return Json(new { code = 0, message = "Số lượng không hợp lệ" });
+            if (Quantity <= 0) return Json(new { code = 0, message = "Số lượng không hợp lệ" });
 
-            ShoppingCartHelper.UpdateCartItem(productID, quantity, salePrice);
+            ShoppingCartHelper.UpdateCartItem(ProductID, Quantity, SalePrice);
             return Json(new { code = 1, message = "Cập nhật thành công" });
         }
 

@@ -21,16 +21,20 @@
             </div>
 
             <div class="card-body">
-                <form id="formEdit" method="post" action="~/Product/SavePhoto">
+                @* BỔ SUNG: enctype="multipart/form-data" *@
+                <form id="formEdit" method="post" action="~/Product/SavePhoto" enctype="multipart/form-data">
                     <input type="hidden" asp-for="PhotoID" />
                     <input type="hidden" asp-for="ProductID" />
 
                     <div class="row mb-3 align-items-center">
-                        <label class="col-sm-3 fw-semibold">Tên file ảnh</label>
+                        <label class="col-sm-3 fw-semibold">Chọn file ảnh</label>
                         <div class="col-sm-9">
-                            <input type="text" asp-for="Photo"
-                                   class="form-control"
-                                   placeholder="Ví dụ: sample.jpg" />
+                            @* THAY ĐỔI: Chuyển từ text sang file, name phải là uploadPhoto *@
+                            <input type="file" name="uploadPhoto" class="form-control" accept="image/*"
+                                   onchange="document.getElementById('imgPreview').src = window.URL.createObjectURL(this.files[0])" />
+
+                            @* Hidden để giữ tên file cũ nếu không chọn file mới *@
+                            <input type="hidden" asp-for="Photo" />
                             <span asp-validation-for="Photo" class="text-danger"></span>
                         </div>
                     </div>
@@ -48,17 +52,14 @@
                     <div class="row mb-3">
                         <label class="col-sm-3 fw-semibold">Mô tả</label>
                         <div class="col-sm-9">
-                            <input type="text" asp-for="Description"
-                                   class="form-control" />
+                            <input type="text" asp-for="Description" class="form-control" />
                         </div>
                     </div>
 
                     <div class="row mb-3">
                         <label class="col-sm-3 fw-semibold">Thứ tự hiển thị</label>
                         <div class="col-sm-3">
-                            <input type="number" asp-for="DisplayOrder"
-                                   class="form-control"
-                                   min="1" />
+                            <input type="number" asp-for="DisplayOrder" class="form-control" min="1" />
                             <span asp-validation-for="DisplayOrder" class="text-danger"></span>
                         </div>
                     </div>
@@ -67,15 +68,13 @@
                         <label class="col-sm-3 fw-semibold">Trạng thái</label>
                         <div class="col-sm-9">
                             <div class="form-check">
-                                <input class="form-check-input" asp-for="IsHidden"
-                                       type="checkbox"
-                                       id="IsHidden" />
+                                <input class="form-check-input" asp-for="IsHidden" type="checkbox" id="IsHidden" />
                                 <label class="form-check-label" for="IsHidden">
                                     Ẩn ảnh
                                 </label>
                             </div>
                         </div>
-                    </div>                    
+                    </div>
                 </form>
             </div>
         </div>

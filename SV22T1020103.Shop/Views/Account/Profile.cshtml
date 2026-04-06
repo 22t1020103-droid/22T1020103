@@ -10,30 +10,35 @@
     <div class="card-body p-4">
         @if (ViewBag.Error != null)
         {
-            <div class="alert alert-danger">@ViewBag.Error</div>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i> @ViewBag.Error
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
         }
         @if (ViewBag.Message != null)
         {
-            <div class="alert alert-success">@ViewBag.Message</div>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-check-circle me-2"></i> @ViewBag.Message
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
         }
 
         <form asp-controller="Account" asp-action="UpdateProfile" method="post">
             @* Luôn phải có ID ẩn để hệ thống biết cập nhật cho đúng người *@
             <input type="hidden" asp-for="CustomerID" />
 
+            <h6 class="text-secondary fw-bold mb-3"><i class="fa-solid fa-info-circle me-2"></i> THÔNG TIN CÁ NHÂN</h6>
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label class="form-label fw-bold">Tên hiển thị</label>
-                    <input asp-for="CustomerName" class="form-control" required />
+                    <input asp-for="CustomerName" class="form-control" required placeholder="Nhập họ tên của bạn" />
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-bold">Email</label>
-                    @* Giữ readonly để bảo vệ tên đăng nhập *@
+                    <label class="form-label fw-bold">Email (Tên đăng nhập)</label>
                     <input asp-for="Email" class="form-control bg-light" readonly />
                 </div>
             </div>
 
-            @* Bổ sung Số điện thoại và Tỉnh thành để khớp với SQL *@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label class="form-label fw-bold">Số điện thoại</label>
@@ -45,33 +50,47 @@
                 </div>
             </div>
 
-            @* Bổ sung Địa chỉ *@
             <div class="mb-3">
                 <label class="form-label fw-bold">Địa chỉ</label>
-                <input asp-for="Address" class="form-control" placeholder="Nhập địa chỉ của bạn" />
+                <input asp-for="Address" class="form-control" placeholder="Nhập địa chỉ chi tiết" />
             </div>
 
             <hr class="my-4" />
-            <h6 class="text-secondary fw-bold mb-3"><i class="fa-solid fa-key me-2"></i> THAY ĐỔI MẬT KHẨU</h6>
 
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label class="form-label fw-bold">Mật khẩu cũ</label>
-                    <input name="oldPassword" type="password" class="form-control" placeholder="Nhập mật khẩu hiện tại" />
+            <h6 class="text-secondary fw-bold mb-3"><i class="fa-solid fa-key me-2"></i> THAY ĐỔI MẬT KHẨU</h6>
+            <div class="row mb-2">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label fw-bold">Mật khẩu cũ</label>
+                        <input name="oldPassword" type="password" class="form-control" placeholder="Mật khẩu hiện tại" />
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-bold">Mật khẩu mới</label>
-                    <input asp-for="Password" type="password" class="form-control" placeholder="Nhập nếu muốn thay đổi" />
-                    <small class="text-muted fst-italic">Để trống nếu bạn giữ nguyên mật khẩu cũ.</small>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label fw-bold text-primary">Mật khẩu mới</label>
+                        <input asp-for="Password" type="password" class="form-control" placeholder="Mật khẩu mới" />
+                    </div>
                 </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label fw-bold text-primary">Xác nhận mật khẩu mới</label>
+                        <input name="confirmPassword" type="password" class="form-control" placeholder="Nhập lại mật khẩu mới" />
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <small class="text-muted fst-italic">
+                    <i class="fa-solid fa-circle-info me-1"></i>
+                    Để trống phần mật khẩu nếu bạn không muốn thay đổi. Nếu đổi, mật khẩu mới và xác nhận phải khớp nhau.
+                </small>
             </div>
 
             <div class="d-flex justify-content-between pt-3 border-top mt-4">
-                <a asp-controller="Home" asp-action="Index" class="btn btn-link text-muted text-decoration-none">
-                    <i class="fa-solid fa-arrow-left"></i> Quay lại trang chủ
+                <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary px-3">
+                    <i class="fa-solid fa-house me-2"></i> Trang chủ
                 </a>
-                <button type="submit" class="btn btn-primary px-4">
-                    <i class="fa-solid fa-save me-2"></i> Lưu thay đổi
+                <button type="submit" class="btn btn-primary px-5 fw-bold">
+                    <i class="fa-solid fa-floppy-disk me-2"></i> LƯU THAY ĐỔI
                 </button>
             </div>
         </form>

@@ -6,12 +6,25 @@ using SV22T1020103.Models.Catalog;
 
 namespace SV22T1020103.Admin.Controllers
 {
+    /// <summary>
+    /// Quản lý mặt hàng
+    /// </summary>
     //[Authorize(Roles = $"{WebUserRoles.Administrator},{WebUserRoles.DataManager}")]
     public class ProductController : Controller
     {
         private const int PAGESIZE = 10;
         private const string PRODUCT_SEARCH_INPUT = "ProductSearchInput";
+        private readonly IWebHostEnvironment _hostEnvironment;
 
+        public ProductController(IWebHostEnvironment hostEnvironment)
+        {
+            _hostEnvironment = hostEnvironment;
+        }
+
+        /// <summary>
+        /// Giao diện danh sách mặt hàng
+        /// </summary>
+        /// <returns></returns>
         public IActionResult Index()
         {
             var input = ApplicationContext.GetSessionData<ProductSearchInput>(PRODUCT_SEARCH_INPUT);
@@ -30,6 +43,11 @@ namespace SV22T1020103.Admin.Controllers
             return View(input);
         }
 
+        /// <summary>
+        /// Tìm kiếm mặt hàng
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         public async Task<IActionResult> Search(ProductSearchInput input)
         {
             var result = await CatalogDataService.ListProductsAsync(input);
@@ -37,6 +55,11 @@ namespace SV22T1020103.Admin.Controllers
             return View(result);
         }
 
+        /// <summary>
+        /// Xem chi tiết mặt hàng
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public async Task<IActionResult> Detail(int id)
         {
             var model = await CatalogDataService.GetProductAsync(id);
@@ -48,6 +71,11 @@ namespace SV22T1020103.Admin.Controllers
             ViewBag.Photos = await CatalogDataService.ListPhotosAsync(id);
             return View(model);
         }
+
+        /// <summary>
+        /// Giao diện bổ sung mặt hàng
+        /// </summary>
+        /// <returns></returns>
         public IActionResult Create()
         {
             ViewBag.Title = "Bổ sung mặt hàng";
@@ -62,6 +90,12 @@ namespace SV22T1020103.Admin.Controllers
             ViewBag.ProductPhotos = new List<ProductPhoto>();
             return View("Edit", model);
         }
+
+        /// <summary>
+        /// Giao diện cập nhật mặt hàng
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public async Task<IActionResult> Edit(int id)
         {
             ViewBag.Title = "Cập nhật thông tin mặt hàng";
@@ -74,8 +108,14 @@ namespace SV22T1020103.Admin.Controllers
             return View(model);
         }
 
+        /// <summary>
+        /// Lưu dữ liệu mặt hàng
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="uploadPhoto"></param>
+        /// <returns></returns>
         [HttpPost]
-        public async Task<IActionResult> SaveData(Product data)
+        public async Task<IActionResult> SaveData(Product data, IFormFile? uploadPhoto)
         {
             ViewBag.Title = data.ProductID == 0 ? "Bổ sung mặt hàng" : "Cập nhật thông tin mặt hàng";
             try
@@ -94,7 +134,17 @@ namespace SV22T1020103.Admin.Controllers
                 if (string.IsNullOrEmpty(data.ProductDescription))
                     data.ProductDescription = "";
 
-                if (data.ProductID > 0 && string.IsNullOrWhiteSpace(data.Photo))
+                if (uploadPhoto != null)
+                {
+                    string fileName = $"{DateTime.Now.Ticks}_{uploadPhoto.FileName}";
+                    string filePath = Path.Combine(_hostEnvironment.WebRootPath, "images", "products", fileName);
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await uploadPhoto.CopyToAsync(stream);
+                    }
+                    data.Photo = fileName;
+                }
+                else if (data.ProductID > 0 && string.IsNullOrWhiteSpace(data.Photo))
                 {
                     var oldData = await CatalogDataService.GetProductAsync(data.ProductID);
                     data.Photo = oldData?.Photo;
@@ -124,10 +174,11 @@ namespace SV22T1020103.Admin.Controllers
                 return View("Edit", data);
             }
         }
+
         /// <summary>
-        /// Hiển thị danh sách các thuộc tính của mặt hàng
+        /// Xóa mặt hàng
         /// </summary>
-        /// <param name="id"> Mã mặt hàng cần lấy thuộc tính</param> 
+        /// <param name="id"></param>
         /// <returns></returns>
         public async Task<IActionResult> Delete(int id)
         {
@@ -144,23 +195,29 @@ namespace SV22T1020103.Admin.Controllers
             ViewBag.AllowDelete = !(await CatalogDataService.IsUsedProductAsync(id));
             return View(model);
         }
+
         /// <summary>
-        /// 
+        /// Danh sách thuộc tính mặt hàng
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public async Task<IActionResult> ListAttributes(int id) 
-        { 
+        public async Task<IActionResult> ListAttributes(int id)
+        {
             var data = await CatalogDataService.ListAttributesAsync(id);
             ViewBag.ProductID = id;
-            return View(data); 
+            return View(data);
         }
 
+        /// <summary>
+        /// Giao diện bổ sung thuộc tính
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public IActionResult CreateAttribute(int id)
         {
             if (id <= 0)
             {
-                TempData["Message"] = "Vui lòng lưu mặt hàng (có mã sản phẩm) trước khi thêm thuộc tính.";
+                TempData["Message"] = "Vui lòng lưu mặt hàng trước khi thêm thuộc tính.";
                 return RedirectToAction("Create");
             }
             var model = new ProductAttribute()
@@ -169,26 +226,28 @@ namespace SV22T1020103.Admin.Controllers
                 DisplayOrder = 1
             };
             return View("EditAttribute", model);
-        }   
+        }
+
         /// <summary>
-        /// Cập nhật một thuốc tính cho mặt hàng
+        /// Giao diện cập nhật thuộc tính
         /// </summary>
-        /// <param name="id">Mã mặt hàng có thuộc tính cần cập nhật</param>
-        /// <param name="attributeId">Mã thuộc tính cần cập nhật</param>
-        /// 
-        /// 
-        /// 
-        /// 
-        /// <returns></returns>        
+        /// <param name="id"></param>
+        /// <param name="attributeId"></param>
+        /// <returns></returns>
         public async Task<IActionResult> EditAttribute(int id, long attributeId)
         {
             var model = await CatalogDataService.GetAttributeAsync(attributeId);
             if (model == null || model.ProductID != id)
                 return RedirectToAction("Edit", new { id });
 
-            return View("EditAttribute", model); 
-        }    
+            return View("EditAttribute", model);
+        }
 
+        /// <summary>
+        /// Lưu thuộc tính mặt hàng
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<IActionResult> SaveAttribute(ProductAttribute data)
         {
@@ -199,9 +258,7 @@ namespace SV22T1020103.Admin.Controllers
             if (data.DisplayOrder < 1)
                 ModelState.AddModelError(nameof(data.DisplayOrder), "Thứ tự hiển thị phải lớn hơn 0");
             if (data.ProductID <= 0)
-                ModelState.AddModelError(nameof(data.ProductID), "Mã mặt hàng không hợp lệ. Hãy lưu mặt hàng trước khi thêm thuộc tính.");
-            else if (await CatalogDataService.GetProductAsync(data.ProductID) == null)
-                ModelState.AddModelError(nameof(data.ProductID), "Mặt hàng không tồn tại trong CSDL.");
+                ModelState.AddModelError(nameof(data.ProductID), "Mã mặt hàng không hợp lệ.");
 
             if (!ModelState.IsValid)
                 return View("EditAttribute", data);
@@ -217,16 +274,17 @@ namespace SV22T1020103.Admin.Controllers
             }
             catch (SqlException)
             {
-                ModelState.AddModelError("Error", "Không lưu được thuộc tính (ràng buộc CSDL hoặc mặt hàng không tồn tại).");
+                ModelState.AddModelError("Error", "Không lưu được thuộc tính.");
                 return View("EditAttribute", data);
             }
         }
+
         /// <summary>
-        /// Xóa một thuộc tính của mặt hàng
+        /// Xóa thuộc tính mặt hàng
         /// </summary>
-        /// <param name="id">Mã mặt hàng có thuộc tính cần xóa</param>
-        /// <param name="attributeId">Mã thuộc tính muốn xóa</param>
-        /// <returns></returns>        
+        /// <param name="id"></param>
+        /// <param name="attributeId"></param>
+        /// <returns></returns>
         public async Task<IActionResult> DeleteAttribute(int id, long attributeId)
         {
             if (Request.Method == "POST")
@@ -241,23 +299,29 @@ namespace SV22T1020103.Admin.Controllers
 
             return View("DeleteListAttributes", model);
         }
-           
+
+        /// <summary>
+        /// Danh sách ảnh của mặt hàng
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public async Task<IActionResult> ListPhotos(int id)
         {
             var data = await CatalogDataService.ListPhotosAsync(id);
             ViewBag.ProductID = id;
             return View(data);
         }
+
         /// <summary>
-        /// Bổ sung ảnh của mặt hàng
+        /// Giao diện bổ sung ảnh
         /// </summary>
-        /// <param name="id">Mã mặt hàng cần bổ sung</param>
+        /// <param name="id"></param>
         /// <returns></returns>
         public IActionResult CreatePhoto(int id)
         {
             if (id <= 0)
             {
-                TempData["Message"] = "Vui lòng lưu mặt hàng (có mã sản phẩm) trước khi thêm ảnh.";
+                TempData["Message"] = "Vui lòng lưu mặt hàng trước khi thêm ảnh.";
                 return RedirectToAction("Create");
             }
             var model = new ProductPhoto()
@@ -266,12 +330,14 @@ namespace SV22T1020103.Admin.Controllers
                 DisplayOrder = 1,
                 Description = string.Empty
             };
-            return View("EditPhoto", model); 
+            return View("EditPhoto", model);
         }
+
         /// <summary>
-        /// Cập nhật ảnh của mặt hàng
+        /// Giao diện cập nhật ảnh
         /// </summary>
-        /// <param name="id"> Mã mặt hàng có ảnh cần cập nhật</param>
+        /// <param name="id"></param>
+        /// <param name="photoId"></param>
         /// <returns></returns>
         public async Task<IActionResult> EditPhoto(int id, int photoId)
         {
@@ -282,20 +348,32 @@ namespace SV22T1020103.Admin.Controllers
             return View("EditPhoto", model);
         }
 
+        /// <summary>
+        /// Lưu ảnh của mặt hàng
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="uploadPhoto"></param>
+        /// <returns></returns>
         [HttpPost]
-        public async Task<IActionResult> SavePhoto(ProductPhoto data)
+        public async Task<IActionResult> SavePhoto(ProductPhoto data, IFormFile? uploadPhoto)
         {
-            // Cột Description trong DB không cho NULL
+            if (uploadPhoto != null)
+            {
+                string fileName = $"{DateTime.Now.Ticks}_{uploadPhoto.FileName}";
+                string filePath = Path.Combine(_hostEnvironment.WebRootPath, "images", "products", fileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await uploadPhoto.CopyToAsync(stream);
+                }
+                data.Photo = fileName;
+            }
+
             data.Description = string.IsNullOrWhiteSpace(data.Description) ? string.Empty : data.Description.Trim();
 
             if (string.IsNullOrWhiteSpace(data.Photo))
-                ModelState.AddModelError(nameof(data.Photo), "Vui lòng nhập tên file ảnh");
+                ModelState.AddModelError(nameof(data.Photo), "Vui lòng chọn ảnh cho mặt hàng");
             if (data.DisplayOrder < 1)
                 ModelState.AddModelError(nameof(data.DisplayOrder), "Thứ tự hiển thị phải lớn hơn 0");
-            if (data.ProductID <= 0)
-                ModelState.AddModelError(nameof(data.ProductID), "Mã mặt hàng không hợp lệ. Hãy lưu mặt hàng trước khi thêm ảnh.");
-            else if (await CatalogDataService.GetProductAsync(data.ProductID) == null)
-                ModelState.AddModelError(nameof(data.ProductID), "Mặt hàng không tồn tại trong CSDL.");
 
             if (!ModelState.IsValid)
                 return View("EditPhoto", data);
@@ -311,15 +389,16 @@ namespace SV22T1020103.Admin.Controllers
             }
             catch (SqlException)
             {
-                ModelState.AddModelError("Error", "Không lưu được ảnh (ràng buộc CSDL hoặc dữ liệu không hợp lệ).");
+                ModelState.AddModelError("Error", "Không lưu được ảnh vào CSDL.");
                 return View("EditPhoto", data);
             }
         }
+
         /// <summary>
-        /// Xóa một ảnh của mặt hàng
+        /// Xóa ảnh mặt hàng
         /// </summary>
-        /// <param name="id"> Mã mặt hàng có ảnh cần xóa</param>
-        /// <param name="photoId"> Mã ảnh cần xóa</param>
+        /// <param name="id"></param>
+        /// <param name="photoId"></param>
         /// <returns></returns>
         public async Task<IActionResult> DeletePhoto(int id, int photoId)
         {

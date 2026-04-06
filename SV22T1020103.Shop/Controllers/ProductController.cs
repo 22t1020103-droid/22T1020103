@@ -12,24 +12,48 @@ namespace SV22T1020103.Shop.Controllers
 {
     public class ProductController : Controller
     {
-        public async Task<IActionResult> Index(string searchValue = "", int categoryId = 0, decimal minPrice = 0, decimal maxPrice = 0)
+        /// <summary>
+        /// Trang danh sách sản phẩm với bộ lọc tìm kiếm
+        /// </summary>
+        public async Task<IActionResult> Index(string searchValue = "", int categoryId = 0, string minPrice = "0", string maxPrice = "0")
         {
+            // 1. Xử lý ép kiểu từ string (có thể chứa dấu chấm từ View) sang decimal
+            decimal min = 0;
+            decimal max = 0;
+
+            // Xóa dấu chấm (nếu có) trước khi parse để tránh lỗi định dạng
+            if (!string.IsNullOrEmpty(minPrice))
+                decimal.TryParse(minPrice.Replace(".", ""), out min);
+
+            if (!string.IsNullOrEmpty(maxPrice))
+                decimal.TryParse(maxPrice.Replace(".", ""), out max);
+
+            // 2. Thực hiện tìm kiếm sản phẩm qua Business Layer
+            var productList = ProductService.Search(searchValue ?? "", categoryId, min, max);
+
+            // 3. Lấy danh sách danh mục để hiển thị lên Sidebar
             var categories = new List<SV22T1020103.Models.Catalog.Category>();
-            var productList = ProductService.Search(searchValue ?? "", categoryId, minPrice, maxPrice);
             try
             {
                 var categoryInput = new PaginationSearchInput() { Page = 1, PageSize = 100, SearchValue = "" };
                 var categoryResult = await CatalogDataService.ListCategoriesAsync(categoryInput);
                 if (categoryResult != null) categories = categoryResult.DataItems;
             }
-            catch { }
+            catch { /* Ghi log nếu cần thiết */ }
 
+            // 4. Đổ dữ liệu ra ViewBag để View tái sử dụng (giữ lại giá trị sau khi submit)
             ViewBag.Categories = categories;
             ViewBag.SearchValue = searchValue;
             ViewBag.CurrentCategory = categoryId;
+            ViewBag.MinPrice = minPrice;
+            ViewBag.MaxPrice = maxPrice;
+
             return View(productList);
         }
 
+        /// <summary>
+        /// Xem chi tiết một sản phẩm
+        /// </summary>
         public async Task<IActionResult> Details(int id)
         {
             var product = ProductService.GetProduct(id);
@@ -60,7 +84,7 @@ namespace SV22T1020103.Shop.Controllers
                 else { item.Quantity++; }
                 HttpContext.Session.Set("Cart", cart);
 
-                // BỔ SUNG: Cập nhật số lượng hiển thị trên Badge
+                // Cập nhật số lượng Badge trên Header
                 int totalQuantity = cart.Sum(c => c.Quantity);
                 HttpContext.Session.SetInt32("CartCount", totalQuantity);
             }
@@ -78,7 +102,6 @@ namespace SV22T1020103.Shop.Controllers
                 cart.Remove(item);
                 HttpContext.Session.Set("Cart", cart);
 
-                // BỔ SUNG: Cập nhật lại số lượng sau khi xóa
                 int totalQuantity = cart.Sum(c => c.Quantity);
                 HttpContext.Session.SetInt32("CartCount", totalQuantity);
             }
@@ -95,7 +118,6 @@ namespace SV22T1020103.Shop.Controllers
                 item.Quantity = quantity <= 1 ? 1 : quantity;
                 HttpContext.Session.Set("Cart", cart);
 
-                // BỔ SUNG: Cập nhật lại số lượng sau khi thay đổi số lượng từng món
                 int totalQuantity = cart.Sum(c => c.Quantity);
                 HttpContext.Session.SetInt32("CartCount", totalQuantity);
             }
@@ -105,7 +127,6 @@ namespace SV22T1020103.Shop.Controllers
         public IActionResult ClearCart()
         {
             HttpContext.Session.Remove("Cart");
-            // BỔ SUNG: Xóa luôn số lượng trên Badge
             HttpContext.Session.Remove("CartCount");
             return RedirectToAction("ViewCart");
         }
@@ -118,9 +139,6 @@ namespace SV22T1020103.Shop.Controllers
             return View(cart);
         }
 
-        /// <summary>
-        /// Xử lý xác nhận đặt hàng và lưu vào Lịch sử đơn hàng (Session)
-        /// </summary>
         [HttpPost]
         public IActionResult DoCheckout(string phone, string deliveryAddress)
         {
@@ -135,7 +153,7 @@ namespace SV22T1020103.Shop.Controllers
                 return View("Checkout", cart);
             }
 
-            // Tạo đối tượng Order mới mang theo danh sách sản phẩm thực tế
+            // Tạo đơn hàng mới
             var orderData = new Order()
             {
                 OrderId = new Random().Next(1000, 9999),
@@ -145,7 +163,6 @@ namespace SV22T1020103.Shop.Controllers
                 Address = deliveryAddress,
                 TotalAmount = cart.Sum(i => i.Quantity * i.Price),
                 Status = "Chờ xác nhận",
-                // Chuyển dữ liệu từ giỏ hàng sang Details của đơn hàng
                 Details = cart.Select(c => new OrderDetail
                 {
                     ProductName = c.ProductName,
@@ -154,13 +171,13 @@ namespace SV22T1020103.Shop.Controllers
                 }).ToList()
             };
 
-            // LƯU VÀO SESSION ĐỂ XEM LẠI TRONG HISTORY/DETAIL
+            // Lưu vào lịch sử (Session)
             var history = HttpContext.Session.Get<List<Order>>("OrderHistory") ?? new List<Order>();
             history.Add(orderData);
             HttpContext.Session.Set("OrderHistory", history);
 
+            // Xóa giỏ hàng sau khi đặt thành công
             HttpContext.Session.Remove("Cart");
-            // BỔ SUNG: Xóa số lượng Badge sau khi đặt hàng thành công
             HttpContext.Session.Remove("CartCount");
 
             return View("OrderSuccess", orderData);
@@ -177,22 +194,16 @@ namespace SV22T1020103.Shop.Controllers
             string customerName = HttpContext.Session.GetString("CustomerName");
             if (string.IsNullOrEmpty(customerName)) return RedirectToAction("Login", "Account");
 
-            // Lấy danh sách thực tế thay vì gán tĩnh
             var model = HttpContext.Session.Get<List<Order>>("OrderHistory") ?? new List<Order>();
             return View(model.OrderByDescending(o => o.OrderTime).ToList());
         }
 
         public IActionResult OrderDetail(int id)
         {
-            // Tìm đơn hàng trong lịch sử Session dựa trên ID truyền vào
             var history = HttpContext.Session.Get<List<Order>>("OrderHistory") ?? new List<Order>();
             var order = history.FirstOrDefault(o => o.OrderId == id);
 
-            // Nếu không thấy (do reset session) thì tạo mẫu để không lỗi giao diện
-            if (order == null)
-            {
-                return RedirectToAction("History");
-            }
+            if (order == null) return RedirectToAction("History");
 
             return View(order);
         }
