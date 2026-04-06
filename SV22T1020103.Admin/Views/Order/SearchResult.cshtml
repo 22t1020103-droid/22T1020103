@@ -1,0 +1,156 @@
+﻿@model SV22T1020103.Models.Common.PagedResult<SV22T1020103.Models.Sales.OrderSearchInfo>
+@{
+    Layout = null;
+
+    int currentPage = Model?.Page ?? 1;
+    int pageSize = Model?.PageSize ?? 10;
+    int rowCount = Model?.RowCount ?? 0;
+    int pageCount = Model?.PageCount ?? 0;
+    int stt = (currentPage - 1) * pageSize;
+}
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover table-striped mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th style="width:80px" class="text-center">STT</th>
+                        <th>Mã đơn</th>
+                        <th>Ngày lập</th>
+                        <th>Khách hàng</th>
+                        <th style="width:150px">Trạng thái</th>
+                        <th style="width:140px" class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.DataItems != null && Model.DataItems.Count > 0)
+                    {
+                        foreach (var order in Model.DataItems)
+                        {
+                            <tr>
+                                <td class="text-center">@(++stt)</td>
+                                <td>@order.OrderID</td>
+                                <td>@order.OrderTime.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@order.CustomerName</td>
+                                <td>@order.Status</td>
+                                <td class="text-center">
+                                    <a href="~/Order/Detail/@order.OrderID" class="btn btn-sm btn-info">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="~/Order/Delete/@order.OrderID" class="btn btn-sm btn-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                Không có đơn hàng nào
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card-footer d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            Có <strong>@rowCount</strong> đơn hàng
+        </div>
+
+        @if (pageCount > 1)
+        {
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                    <a class="page-link"
+                       href="javascript:void(0)"
+                       onclick="if(@currentPage > 1) paginationSearch(null, document.getElementById('formSearch'), @(currentPage - 1))">
+                        «
+                    </a>
+                </li>
+
+                @if (currentPage > 3)
+                {
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="javascript:void(0)"
+                           onclick="paginationSearch(null, document.getElementById('formSearch'), 1)">1</a>
+                    </li>
+                    @if (currentPage > 4)
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    }
+                }
+
+                @{
+                    int startPage = currentPage - 2;
+                    int endPage = currentPage + 2;
+
+                    if (startPage < 1)
+                    {
+                        startPage = 1;
+                        endPage = Math.Min(5, pageCount);
+                    }
+
+                    if (endPage > pageCount)
+                    {
+                        endPage = pageCount;
+                        startPage = Math.Max(1, pageCount - 4);
+                    }
+                }
+
+                @for (int p = startPage; p <= endPage; p++)
+                {
+                    if (p == currentPage)
+                    {
+                        <li class="page-item active">
+                            <span class="page-link">@p</span>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="javascript:void(0)"
+                               onclick="paginationSearch(null, document.getElementById('formSearch'), @p)">
+                                @p
+                            </a>
+                        </li>
+                    }
+                }
+
+                @if (currentPage < pageCount - 2)
+                {
+                    @if (currentPage < pageCount - 3)
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    }
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="javascript:void(0)"
+                           onclick="paginationSearch(null, document.getElementById('formSearch'), @pageCount)">
+                            @pageCount
+                        </a>
+                    </li>
+                }
+
+                <li class="page-item @(currentPage == pageCount ? "disabled" : "")">
+                    <a class="page-link"
+                       href="javascript:void(0)"
+                       onclick="if(@currentPage < @pageCount) paginationSearch(null, document.getElementById('formSearch'), @(currentPage + 1))">
+                        »
+                    </a>
+                </li>
+            </ul>
+        }
+    </div>
+</div>

@@ -1,0 +1,127 @@
+﻿@{
+    ViewData["Title"] = "Trang chủ";
+}
+
+<div class="hero-section overflow-hidden">
+    <div class="container">
+        <div class="row align-items-center" style="min-height: 80vh;">
+            <div class="col-lg-6 mb-5 mb-lg-0">
+                <div class="animate-content">
+                    <span class="badge bg-light text-primary px-3 py-2 rounded-pill mb-3 fw-bold border">
+                        ✨ NEW COLLECTION 2026
+                    </span>
+                    <h1 class="display-3 fw-800 mb-4" style="letter-spacing: -2px;">
+                        Nâng Tầm <span class="text-gradient">Phong Cách</span> <br> Của Riêng Bạn
+                    </h1>
+                    <p class="lead text-muted mb-5 pe-lg-5">
+                        Khám phá những sản phẩm công nghệ và thời trang độc đáo,
+                        được chọn lọc kỹ lưỡng để mang lại giá trị tốt nhất cho bạn.
+                    </p>
+
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="@Url.Action("Index", "Product")" class="btn btn-primary btn-lg px-5 py-3 rounded-pill fw-bold shadow-lg">
+                            Mua Ngay <i class="bi bi-arrow-right ms-2"></i>
+                        </a>
+                        <a href="#featured" class="btn btn-outline-dark btn-lg px-5 py-3 rounded-pill fw-bold">
+                            Bộ sưu tập
+                        </a>
+                    </div>
+
+                    <div class="mt-5 d-flex align-items-center gap-4">
+                        <div class="avatar-stack d-flex">
+                            <img src="https://i.pravatar.cc/150?u=1" class="rounded-circle border border-2 border-white shadow-sm" style="width: 45px; height: 45px; margin-right: -15px;">
+                            <img src="https://i.pravatar.cc/150?u=2" class="rounded-circle border border-2 border-white shadow-sm" style="width: 45px; height: 45px; margin-right: -15px;">
+                            <img src="https://i.pravatar.cc/150?u=3" class="rounded-circle border border-2 border-white shadow-sm" style="width: 45px; height: 45px;">
+                        </div>
+                        <div class="text-muted small fw-bold">
+                            <span class="text-dark">10k+</span> khách hàng đã tin tưởng
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 position-relative text-center">
+                <div class="hero-img-wrapper animate-float">
+                    <div class="blob-bg"></div>
+                    <img src="https://img.freepik.com/free-photo/arrangement-modern-vibrant-objects_23-2149309641.jpg"
+                         class="img-fluid rounded-5 shadow-2xl position-relative z-index-1"
+                         alt="Hero Image" style="max-height: 500px; transform: rotate(2deg);">
+
+                    <div class="floating-label shadow-lg animate-bounce">
+                        <i class="bi bi-star-fill text-warning me-2"></i>
+                        <span>Sản phẩm 5 sao</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-800 {
+        font-weight: 800;
+    }
+
+    .text-gradient {
+        background: linear-gradient(90deg, #4361ee, #f72585);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .hero-img-wrapper {
+        position: relative;
+    }
+
+    .blob-bg {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 120%;
+        height: 120%;
+        background: radial-gradient(circle, rgba(67, 97, 238, 0.1) 0%, rgba(247, 37, 133, 0.05) 100%);
+        border-radius: 50%;
+        filter: blur(40px);
+        z-index: 0;
+    }
+
+    .floating-label {
+        position: absolute;
+        bottom: 20px;
+        left: 10%;
+        background: white;
+        padding: 15px 25px;
+        border-radius: 20px;
+        font-weight: 800;
+        z-index: 2;
+    }
+
+    /* Animations */
+    .animate-float {
+        animation: float 6s ease-in-out infinite;
+    }
+
+    @@keyframes float {
+        0%, 100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+
+    .animate-bounce {
+        animation: bounce 3s ease-in-out infinite;
+    }
+
+    @@keyframes bounce {
+        0%, 100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.05);
+        }
+    }
+</style>

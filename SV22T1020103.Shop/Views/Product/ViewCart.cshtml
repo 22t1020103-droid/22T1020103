@@ -1,0 +1,127 @@
+﻿@model IEnumerable<SV22T1020103.Shop.Models.CartItem>
+@{
+    ViewData["Title"] = "Giỏ hàng";
+    var culture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4"><i class="fa fa-shopping-cart"></i> Giỏ hàng của bạn</h2>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info shadow-sm border-0">
+            Giỏ hàng đang trống. <a href="@Url.Action("Index", "Product")" class="fw-bold text-decoration-none">Quay lại mua sắm</a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive shadow-sm card border-0">
+            <table class="table table-hover align-middle mb-0" id="cartTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th class="text-end">Giá</th>
+                        <th class="text-center" style="width: 150px;">Số lượng</th>
+                        <th class="text-end">Tổng cộng</th>
+                        <th class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr id="row-@item.ProductId">
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="~/images/@(string.IsNullOrEmpty(item.Image) ? "no-image.png" : item.Image)"
+                                         style="width: 60px; height: 60px; object-fit: contain; margin-right: 15px;"
+                                         onerror="this.src='/images/no-image.png'" />
+                                    <div>
+                                        <div class="fw-bold view-mode">@item.ProductName</div>
+                                        <input type="text" class="form-control form-control-sm edit-mode d-none in-name" value="@item.ProductName" />
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-end">@item.Price.ToString("N0", culture) đ</td>
+                            <td class="text-center">
+                                <span class="view-mode">@item.Quantity</span>
+                                <input type="number" class="form-control form-control-sm edit-mode d-none in-qty text-center m-auto"
+                                       value="@item.Quantity" min="1" style="max-width: 80px;" />
+                            </td>
+                            <td class="text-end fw-bold text-danger">
+                                @((item.Price * item.Quantity).ToString("N0", culture)) đ
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-outline-info btn-sm view-mode" onclick="btnEditClick(@item.ProductId)"><i class="fa fa-edit"></i></button>
+                                <button class="btn btn-success btn-sm edit-mode d-none" onclick="btnSaveClick(@item.ProductId)"><i class="fa fa-save"></i></button>
+                                <a href="@Url.Action("RemoveFromCart", "Product", new { id = item.ProductId })" class="btn btn-outline-danger btn-sm" onclick="return confirm('Xóa sản phẩm này?')"><i class="fa fa-trash"></i></a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+
+                @* --- PHẦN TFOOT GỘP NÚT VÀO TRONG KHUNG --- *@
+                <tfoot>
+                    <tr class="table-light">
+                        <td colspan="3" class="text-end fw-bold align-middle py-3">TỔNG TIỀN THANH TOÁN:</td>
+                        <td class="text-end fw-bold text-danger h5 mb-0 align-middle py-3">
+                            @Model.Sum(x => x.Price * x.Quantity).ToString("N0", culture) đ
+                        </td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="py-3 border-0 px-3">
+                            <a href="@Url.Action("Index", "Product")" class="btn btn-outline-secondary btn-sm">
+                                <i class="fa fa-arrow-left"></i> Tiếp tục mua sắm
+                            </a>
+                        </td>
+                        <td colspan="3" class="text-end py-3 border-0 px-3">
+                            @* Nút Xóa tất cả *@
+                            <a href="@Url.Action("ClearCart", "Product")" class="btn btn-link text-danger text-decoration-none me-3 fw-bold btn-sm"
+                               onclick="return confirm('Bạn có chắc chắn muốn xóa toàn bộ giỏ hàng?')">
+                                XÓA TẤT CẢ
+                            </a>
+
+                            @* Nút Đặt hàng / Đăng nhập *@
+                            @if (Context.Session.GetString("CustomerName") != null)
+                            {
+                                <a href="@Url.Action("Checkout", "Product")" class="btn btn-primary px-4 fw-bold shadow-sm">
+                                    ĐẶT HÀNG NGAY <i class="fa fa-chevron-right ms-2"></i>
+                                </a>
+                            }
+                            else
+                            {
+                                <a href="/Account/Login" class="btn btn-danger px-4 fw-bold shadow-sm">
+                                    ĐĂNG NHẬP ĐỂ THANH TOÁN
+                                </a>
+                            }
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function btnEditClick(id) {
+            let row = $('#row-' + id);
+            row.find('.view-mode').addClass('d-none');
+            row.find('.edit-mode').removeClass('d-none');
+        }
+
+                function btnSaveClick(id) {
+            let row = $('#row-' + id);
+            // Chú ý: Chỉ cần lấy quantity, vì tên sản phẩm không nên cho sửa ở giỏ hàng
+            let q = row.find('.in-qty').val();
+
+            // Đổi 'UpdateCart' thành 'UpdateQuantity' cho đúng tên hàm trong Controller
+            $.post('/Product/UpdateQuantity', { id: id, quantity: q }, function () {
+                // Sau khi gọi xong thì load lại trang để thấy tiền thay đổi
+                location.reload();
+            }).fail(function() {
+                alert("Có lỗi khi kết nối với máy chủ!");
+            });
+        }
+    </script>
+}

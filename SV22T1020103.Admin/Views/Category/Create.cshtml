@@ -1,0 +1,38 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+@* Giả sử bạn đã có class Category trong DomainModels *@
+
+@{
+    ViewBag.Title = "Bổ sung loại hàng";
+}
+
+<div class="box box-primary">
+    <div class="box-header with-border">
+        <h3 class="box-title">@ViewBag.Title</h3>
+    </div>
+
+    @* Form gửi dữ liệu về Action Create trong CategoryController *@
+    <form action="~/Category/Create" method="post">
+        <div class="box-body">
+            <div class="form-group">
+                <label>Tên loại hàng:</label>
+                <input type="text" class="form-control" name="CategoryName" autofocus>
+            </div>
+
+            <div class="form-group">
+                <label>Mô tả:</label>
+                <textarea class="form-control" name="Description" rows="3"></textarea>
+            </div>
+        </div>
+
+        <div class="box-footer">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-floppy-o"></i> Lưu dữ liệu
+            </button>
+            <a href="~/Category" class="btn btn-default"> Quay lại</a>
+        </div>
+    </form>
+</div>

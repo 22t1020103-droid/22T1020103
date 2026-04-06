@@ -1,0 +1,57 @@
+﻿
+@{
+    ViewBag.Title = "Bổ sung khách hàng";
+}
+
+<div class="box box-primary">
+    @* Form gửi dữ liệu đến Action Save *@
+    <form action="~/Customer/Save" method="post">
+        @* ID = 0 để Controller biết đây là Thêm mới (Create) chứ không phải Sửa (Edit) *@
+        <input type="hidden" name="CustomerID" value="0" />
+
+        <div class="box-header with-border">
+            <h3 class="box-title">@ViewBag.Title</h3>
+        </div>
+
+        <div class="box-body">
+            <div class="form-group">
+                <label>Tên khách hàng:</label>
+                <input type="text" class="form-control" name="CustomerName" autofocus required>
+            </div>
+
+            <div class="form-group">
+                <label>Tên giao dịch:</label>
+                <input type="text" class="form-control" name="ContactName">
+            </div>
+
+            <div class="form-group">
+                <label>Địa chỉ:</label>
+                <input type="text" class="form-control" name="Address">
+            </div>
+
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label>Điện thoại:</label>
+                        <input type="text" class="form-control" name="Phone">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label>Email:</label>
+                        <input type="email" class="form-control" name="Email">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="box-footer text-right">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-floppy-o"></i> Lưu dữ liệu
+            </button>
+            <a href="~/Customer" class="btn btn-default">
+                Quay lại
+            </a>
+        </div>
+    </form>
+</div>

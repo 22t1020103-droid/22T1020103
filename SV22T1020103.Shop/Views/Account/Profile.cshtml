@@ -1,0 +1,79 @@
+﻿@model SV22T1020103.Models.Partner.Customer
+@{
+    ViewData["Title"] = "Quản lý tài khoản";
+}
+
+<div class="card shadow-sm border-0 mt-4">
+    <div class="card-header bg-white py-3">
+        <h5 class="text-primary mb-0"><i class="fa-solid fa-user-gear me-2"></i> QUẢN LÝ TÀI KHOẢN</h5>
+    </div>
+    <div class="card-body p-4">
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-danger">@ViewBag.Error</div>
+        }
+        @if (ViewBag.Message != null)
+        {
+            <div class="alert alert-success">@ViewBag.Message</div>
+        }
+
+        <form asp-controller="Account" asp-action="UpdateProfile" method="post">
+            @* Luôn phải có ID ẩn để hệ thống biết cập nhật cho đúng người *@
+            <input type="hidden" asp-for="CustomerID" />
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Tên hiển thị</label>
+                    <input asp-for="CustomerName" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Email</label>
+                    @* Giữ readonly để bảo vệ tên đăng nhập *@
+                    <input asp-for="Email" class="form-control bg-light" readonly />
+                </div>
+            </div>
+
+            @* Bổ sung Số điện thoại và Tỉnh thành để khớp với SQL *@
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Số điện thoại</label>
+                    <input asp-for="Phone" class="form-control" placeholder="Nhập số điện thoại" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Tỉnh/Thành phố</label>
+                    <input asp-for="Province" class="form-control" placeholder="Ví dụ: Thừa Thiên Huế" />
+                </div>
+            </div>
+
+            @* Bổ sung Địa chỉ *@
+            <div class="mb-3">
+                <label class="form-label fw-bold">Địa chỉ</label>
+                <input asp-for="Address" class="form-control" placeholder="Nhập địa chỉ của bạn" />
+            </div>
+
+            <hr class="my-4" />
+            <h6 class="text-secondary fw-bold mb-3"><i class="fa-solid fa-key me-2"></i> THAY ĐỔI MẬT KHẨU</h6>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Mật khẩu cũ</label>
+                    <input name="oldPassword" type="password" class="form-control" placeholder="Nhập mật khẩu hiện tại" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Mật khẩu mới</label>
+                    <input asp-for="Password" type="password" class="form-control" placeholder="Nhập nếu muốn thay đổi" />
+                    <small class="text-muted fst-italic">Để trống nếu bạn giữ nguyên mật khẩu cũ.</small>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between pt-3 border-top mt-4">
+                <a asp-controller="Home" asp-action="Index" class="btn btn-link text-muted text-decoration-none">
+                    <i class="fa-solid fa-arrow-left"></i> Quay lại trang chủ
+                </a>
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="fa-solid fa-save me-2"></i> Lưu thay đổi
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,77 @@
+﻿@model SV22T1020103.Shop.Models.Order
+@{
+    ViewData["Title"] = "Chi tiết đơn hàng";
+}
+
+<div class="container mt-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="mb-0">CHI TIẾT ĐƠN HÀNG #@Model.OrderId</h5>
+            <a href="@Url.Action("History")" class="btn btn-light btn-sm fw-bold"> Quay lại lịch sử</a>
+        </div>
+        <div class="card-body p-4">
+            <div class="row mb-4">
+                <div class="col-md-6 border-end">
+                    <h6 class="text-muted text-uppercase small fw-bold mb-3">Thông tin nhận hàng</h6>
+                    <p class="mb-1"><strong>Người nhận:</strong> @Model.CustomerName</p>
+                    <p class="mb-1"><strong>Điện thoại:</strong> @Model.Phone</p>
+                    <p class="mb-1"><strong>Địa chỉ giao:</strong> @Model.Address</p>
+                </div>
+                <div class="col-md-6 ps-md-4">
+                    <h6 class="text-muted text-uppercase small fw-bold mb-3">Trạng thái xử lý</h6>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="p-2 bg-success text-white rounded-circle me-3 d-flex align-items-center justify-content-center" style="width:35px; height:35px;">
+                            <i class="fa fa-check small"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">Đặt hàng thành công</div>
+                            <small class="text-muted">Hệ thống tiếp nhận lúc @Model.OrderTime.ToString("HH:mm - dd/MM/yyyy")</small>
+                        </div>
+                    </div>
+
+                    @if (Model.Status == "Chờ xác nhận" || Model.Status == "Đang chờ duyệt")
+                    {
+                        <div class="d-flex align-items-center">
+                            <div class="p-2 bg-warning text-dark rounded-circle me-3 d-flex align-items-center justify-content-center" style="width:35px; height:35px;">
+                                <i class="fa fa-spinner fa-spin small"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">@Model.Status</div>
+                                <small class="text-muted">Nhân viên đang kiểm tra kho hàng.</small>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <table class="table table-bordered mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th class="text-center" style="width: 100px;">SL</th>
+                        <th class="text-end">Đơn giá</th>
+                        <th class="text-end">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @* BỔ SUNG: Vòng lặp hiển thị sản phẩm thật *@
+                    @foreach (var item in Model.Details)
+                    {
+                        <tr>
+                            <td>@item.ProductName</td>
+                            <td class="text-center">@item.Quantity</td>
+                            <td class="text-end">@item.SalePrice.ToString("N0") đ</td>
+                            <td class="text-end fw-bold">@item.TotalPrice.ToString("N0") đ</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="3" class="text-end h5 mb-0">TỔNG CỘNG:</th>
+                        <th class="text-end text-danger h5 mb-0">@Model.TotalAmount.ToString("N0") đ</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>

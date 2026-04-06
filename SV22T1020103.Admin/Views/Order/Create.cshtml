@@ -1,0 +1,512 @@
+﻿@model SV22T1020103.Models.Catalog.ProductSearchInput
+@using SV22T1020103.Admin
+@{
+    ViewBag.Title = "Lập đơn hàng";
+
+    // Lấy danh sách khách hàng gợi ý ban đầu
+    var initialCustomers = ViewBag.InitialCustomers as IEnumerable<SV22T1020103.Models.Partner.Customer>
+                           ?? Enumerable.Empty<SV22T1020103.Models.Partner.Customer>();
+}
+
+<div class="row">
+    <div class="col-4">
+        <div class="card card-outline card-primary h-100">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-search"></i>
+                    Lựa chọn hàng cần bán
+                </h5>
+            </div>
+
+            <div class="card-body">
+                <form id="formSearch"
+                      method="get"
+                      action="~/Order/SearchProduct"
+                      data-target="searchResult"
+                      onsubmit="paginationSearch(event, this, 1)"
+                      class="mb-3">
+                    <div class="input-group">
+                        <input type="hidden" asp-for="Page" />
+                        <input type="hidden" asp-for="PageSize" />
+                        <input type="hidden" asp-for="CategoryID" />
+                        <input type="hidden" asp-for="SupplierID" />
+                        <input type="hidden" asp-for="MaxPrice" />
+                        <input type="hidden" asp-for="MinPrice" />
+
+                        <input class="form-control"
+                               asp-for="SearchValue"
+                               placeholder="Nhập tên mặt hàng cần tìm"
+                               autofocus />
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </form>
+
+                <div id="searchResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-8">
+        <div class="row">
+            <div class="col-12" id="cart">
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card card-outline card-info">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-person"></i>
+                            Thông tin khách hàng & nơi giao hàng
+                        </h5>
+                    </div>
+
+                    <div class="card-body">
+                        <form method="post" onsubmit="createOrder(event, this)">
+                            <input type="hidden" name="customerID" id="customerID" value="0" />
+
+                            <div class="row mb-3">
+                                <label class="col-md-2 col-form-label">Khách hàng</label>
+                                <div class="col-md-10 position-relative">
+                                    <input type="text"
+                                           class="form-control"
+                                           id="customerKeyword"
+                                           placeholder="Nhập tên khách hàng..."
+                                           autocomplete="off" />
+
+                                    <div id="customerSuggestion"
+                                         class="list-group position-absolute w-100 shadow-sm"
+                                         style="z-index: 1000; display: none; max-height: 260px; overflow-y: auto;">
+                                    </div>
+
+                                    <div class="form-text">
+                                        Gõ tên khách hàng để tìm nhanh thay vì chọn từ danh sách dài.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <label class="col-md-2 col-form-label">Tỉnh/thành</label>
+                                <div class="col-md-10">
+                                    <select class="form-select" name="province" id="province" asp-items="await SelectListHelper.Provinces()">
+                                        <option value="">-- Tỉnh/Thành phố --</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <label class="col-md-2 col-form-label">Địa chỉ</label>
+                                <div class="col-md-10">
+                                    <textarea class="form-control" name="address" id="address"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle"></i>
+                                    Lập đơn hàng
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ==========================================
+        // 1. CHỨC NĂNG TÌM KIẾM KHÁCH HÀNG TỰ ĐỘNG
+        // ==========================================
+        let customerTimer = null;
+        const customerKeyword = document.getElementById("customerKeyword");
+        const customerID = document.getElementById("customerID");
+        const customerSuggestion = document.getElementById("customerSuggestion");
+        const province = document.getElementById("province");
+        const address = document.getElementById("address");
+
+        const initialCustomers = [
+            @foreach (var c in initialCustomers)
+            {
+                    <text>
+                    {
+                        customerID: @c.CustomerID,
+                        customerName: "@Html.Raw((c.CustomerName ?? "").Replace("\"", "\\\""))",
+                        contactName: "@Html.Raw((c.ContactName ?? "").Replace("\"", "\\\""))",
+                        province: "@Html.Raw((c.Province ?? "").Replace("\"", "\\\""))",
+                        address: "@Html.Raw((c.Address ?? "").Replace("\"", "\\\""))",
+                        phone: "@Html.Raw((c.Phone ?? "").Replace("\"", "\\\""))",
+                        email: "@Html.Raw((c.Email ?? "").Replace("\"", "\\\""))"
+                    },
+                    </text>
+            }
+        ];
+
+        function renderCustomerSuggestions(customers) {
+            if (!customers || customers.length === 0) {
+                customerSuggestion.innerHTML = `
+                    <div class="list-group-item text-muted">
+                        Không tìm thấy khách hàng phù hợp
+                    </div>`;
+                customerSuggestion.style.display = "block";
+                return;
+            }
+
+            let html = "";
+            customers.forEach(c => {
+                html += `
+                    <button type="button"
+                            class="list-group-item list-group-item-action"
+                            onclick="selectCustomer(${c.customerID}, '${escapeHtml(c.customerName)}')">
+                        <div class="fw-bold">${escapeHtml(c.customerName)}</div>
+                        <div class="small text-muted">
+                            ${escapeHtml(c.contactName || "")}
+                            ${c.phone ? " • " + escapeHtml(c.phone) : ""}
+                            ${c.email ? " • " + escapeHtml(c.email) : ""}
+                        </div>
+                        <div class="small text-muted">
+                            ${escapeHtml(c.address || "")}
+                            ${c.province ? " - " + escapeHtml(c.province) : ""}
+                        </div>
+                    </button>
+                `;
+            });
+
+            customerSuggestion.innerHTML = html;
+            customerSuggestion.style.display = "block";
+        }
+
+        function escapeHtml(str) {
+            return (str || "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
+        }
+
+        async function selectCustomer(id, name) {
+            customerID.value = id;
+            customerKeyword.value = name;
+            customerSuggestion.style.display = "none";
+
+            try {
+                const response = await fetch(`/Order/GetCustomerInfo?customerID=${id}`);
+                const data = await response.json();
+
+                if (data) {
+                    if (province && data.province) {
+                        province.value = data.province;
+                    }
+                    if (address) {
+                        address.value = data.address || "";
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        customerKeyword.addEventListener("focus", function () {
+            if (!this.value.trim() && initialCustomers.length > 0) {
+                renderCustomerSuggestions(initialCustomers);
+            }
+        });
+
+        customerKeyword.addEventListener("input", function () {
+            const keyword = this.value.trim();
+
+            customerID.value = 0;
+            clearTimeout(customerTimer);
+
+            if (keyword.length === 0) {
+                renderCustomerSuggestions(initialCustomers);
+                return;
+            }
+
+            customerTimer = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/Order/SearchCustomer?term=${encodeURIComponent(keyword)}`);
+                    const data = await response.json();
+                    renderCustomerSuggestions(data);
+                } catch (err) {
+                    console.error(err);
+                }
+            }, 250);
+        });
+
+        document.addEventListener("click", function (e) {
+            if (!customerSuggestion.contains(e.target) && e.target !== customerKeyword) {
+                customerSuggestion.style.display = "none";
+            }
+        });
+
+
+        // ==========================================
+        // 2. CHỨC NĂNG QUẢN LÝ GIỎ HÀNG (SẴN CÓ)
+        // ==========================================
+        document.addEventListener("DOMContentLoaded", function () {
+            var form = document.getElementById("formSearch");
+            if (form) {
+                paginationSearch(null, form, @(Model != null ? Model.Page : 1));
+            }
+            showCart();
+        });
+
+        function showCart() {
+            fetch('/Order/ShowCart')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Không thể tải giỏ hàng');
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    document.getElementById('cart').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert('Không thể tải giỏ hàng!');
+                });
+        }
+
+        function addCartItem(event, form) {
+            event.preventDefault();
+
+            const formData = new FormData(form);
+
+            fetch('/Order/AddCartItem', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Lỗi khi gọi API');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.code === 0) {
+                        alert(data.message);
+                    } else {
+                        showCart();
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert('Có lỗi xảy ra khi thêm vào giỏ hàng!');
+                });
+
+            return false;
+        }
+
+        function deleteCartItem(productID) {
+            fetch('/Order/DeleteCartItem?productId=' + productID, {
+                method: 'POST'
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Lỗi khi gọi API');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.code === 0) {
+                        alert(data.message);
+                    } else {
+                        showCart();
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert('Có lỗi xảy ra!');
+                });
+        }
+
+        function clearCart() {
+            fetch('/Order/ClearCart', {
+                method: 'POST'
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Lỗi khi gọi API');
+                    }
+                    return response.json();
+                })
+                .then(() => {
+                    showCart();
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert('Có lỗi xảy ra!');
+                });
+        }
+
+        function autoUpdateCartItem(input) {
+            const form = input.closest('form');
+            if (!form) return;
+
+            const quantityInput = form.querySelector('input[name="Quantity"]');
+            const salePriceInput = form.querySelector('input[name="SalePrice"]');
+
+            if (!quantityInput || quantityInput.value === '' || parseInt(quantityInput.value, 10) <= 0) {
+                return;
+            }
+
+            if (!salePriceInput || salePriceInput.value.trim() === '') {
+                return;
+            }
+
+            clearTimeout(form._updateTimer);
+            form._updateTimer = setTimeout(function () {
+                updateCartItem(null, form, false);
+            }, 300);
+        }
+
+        function updateCartItem(event, form, closeModal = true) {
+            if (event) {
+                event.preventDefault();
+            }
+
+            const formData = new FormData(form);
+
+            fetch('/Order/UpdateCartItem', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Lỗi khi gọi API');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.code === 0) {
+                        alert(data.message);
+                    } else {
+                        showCart();
+
+                        if (closeModal) {
+                            const modalElement = document.getElementById('dialogModal');
+                            if (modalElement) {
+                                const modalInstance = bootstrap.Modal.getInstance(modalElement)
+                                    || new bootstrap.Modal(modalElement);
+                                modalInstance.hide();
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert('Có lỗi xảy ra khi cập nhật!');
+                });
+
+            return false;
+        }
+
+        function createOrder(event, form) {
+            event.preventDefault();
+
+            const formData = new FormData(form);
+
+            fetch('/Order/CreateOrder', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Lỗi khi gọi API');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.code === 0) {
+                        alert(data.message);
+                    } else {
+                        window.location.href = '/Order/Detail/' + data.code;
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert('Có lỗi xảy ra khi tạo đơn hàng!');
+                });
+
+            return false;
+        }
+
+        function confirmDeleteCartItem(productID) {
+            fetch('/Order/DeleteCartItem?productId=' + productID, {
+                method: 'POST'
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Lỗi khi xóa mặt hàng');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.code === 0) {
+                        alert(data.message);
+                    } else {
+                        var modalElement = document.getElementById('dialogModal');
+                        if (modalElement) {
+                            var modalInstance = bootstrap.Modal.getInstance(modalElement);
+                            if (modalInstance) {
+                                modalInstance.hide();
+                            }
+                        }
+
+                        showCart();
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert('Có lỗi xảy ra khi xóa mặt hàng!');
+                });
+        }
+
+        function confirmClearCart() {
+            fetch('/Order/ClearCart', {
+                method: 'POST'
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        alert(data.message);
+                    } else {
+                        const modal = document.getElementById('dialogModal');
+                        if (modal) {
+                            const modalInstance = bootstrap.Modal.getInstance(modal);
+                            if (modalInstance) {
+                                modalInstance.hide();
+                            }
+                        }
+
+                        showCart();
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Lỗi khi xóa giỏ hàng!");
+                });
+        }
+
+        function goToProductPage(page) {
+            var form = document.getElementById("formSearch");
+            if (!form) return;
+
+            var pageInput = form.querySelector('input[name="Page"]');
+            if (pageInput) {
+                pageInput.value = page;
+            }
+
+            paginationSearch(null, form, page);
+        }
+    </script>
+}

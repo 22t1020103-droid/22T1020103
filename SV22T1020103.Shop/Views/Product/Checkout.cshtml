@@ -1,0 +1,49 @@
+﻿@model IEnumerable<SV22T1020103.Shop.Models.CartItem>
+@{
+    ViewData["Title"] = "Thanh toán";
+    var culture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4 text-center text-uppercase fw-bold">Thông tin giao hàng</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 p-4 mb-4">
+                <form asp-controller="Product" asp-action="DoCheckout" method="post">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tên khách hàng</label>
+                        <input type="text" class="form-control bg-light" value="@ViewBag.CustomerName" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Số điện thoại liên lạc</label>
+                        <input type="text" name="phone" class="form-control" placeholder="Nhập số điện thoại để shipper liên hệ" required />
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Địa chỉ giao hàng</label>
+                        <textarea name="deliveryAddress" class="form-control" rows="3" placeholder="Số nhà, tên đường, phường/xã, tỉnh/thành..." required></textarea>
+                    </div>
+
+                    <div class="bg-light p-3 rounded mb-4">
+                        <h5 class="fw-bold mb-3">Tóm tắt đơn hàng</h5>
+                        @foreach (var item in Model)
+                        {
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span>@item.ProductName (x@item.Quantity)</span>
+                                <span>@((item.Price * item.Quantity).ToString("N0", culture)) đ</span>
+                            </div>
+                        }
+                        <hr />
+                        <div class="d-flex justify-content-between h4 text-danger fw-bold">
+                            <span>Tổng cộng:</span>
+                            <span>@Model.Sum(x => x.Price * x.Quantity).ToString("N0", culture) đ</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 shadow">
+                        <i class="fa fa-check-circle me-2"></i> XÁC NHẬN ĐẶT HÀNG
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

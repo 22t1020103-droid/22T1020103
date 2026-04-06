@@ -1,0 +1,210 @@
+﻿@model IEnumerable<SV22T1020103.Models.Catalog.Product>
+@using System.Globalization
+@{
+    ViewData["Title"] = "Cửa hàng";
+    var culture = CultureInfo.GetCultureInfo("vi-VN");
+}
+
+<div class="container py-4">
+    <div class="row g-4">
+        @* --- SIDEBAR TÌM KIẾM & BỘ LỌC --- *@
+        <div class="col-lg-3">
+            <div class="simple-sidebar">
+                <form method="get" action="@Url.Action("Index", "Product")">
+                    <h5 class="filter-title">TÌM KIẾM</h5>
+                    <div class="mb-3">
+                        <input type="text" name="searchValue" class="form-control"
+                               placeholder="Tên sản phẩm..." value="@ViewBag.SearchValue" />
+                    </div>
+
+                    <h5 class="filter-title mt-4">DANH MỤC</h5>
+                    <div class="mb-3">
+                        <select name="categoryId" class="form-select">
+                            <option value="0">Tất cả sản phẩm</option>
+                            @if (ViewBag.Categories != null)
+                            {
+                                foreach (var c in (IEnumerable<SV22T1020103.Models.Catalog.Category>)ViewBag.Categories)
+                                {
+                                    <option value="@c.CategoryID" selected="@(c.CategoryID == ViewBag.CurrentCategory)">
+                                        @c.CategoryName
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <h5 class="filter-title mt-4">KHOẢNG GIÁ</h5>
+                    <div class="row g-2 mb-4">
+                        <div class="col-6">
+                            <input type="number" name="minPrice" class="form-control" placeholder="Từ" value="@ViewBag.MinPrice" />
+                        </div>
+                        <div class="col-6">
+                            <input type="number" name="maxPrice" class="form-control" placeholder="Đến" value="@ViewBag.MaxPrice" />
+                        </div>
+                    </div>
+
+                    @* --- HAI NÚT NẰM NGANG NHAU TRONG KHUNG --- *@
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-dark flex-grow-1">TÌM KIẾM</button>
+                        <a href="@Url.Action("Index", "Product")" class="btn btn-outline-secondary border px-3">XÓA</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @* --- DANH SÁCH SẢN PHẨM --- *@
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold m-0 text-uppercase" style="letter-spacing: 1px;">Sản phẩm</h3>
+                <span class="text-muted small">Tìm thấy @(Model?.Count() ?? 0) kết quả</span>
+            </div>
+
+            <div class="row g-3">
+                @if (Model == null || !Model.Any())
+                {
+                    <div class="col-12 text-center py-5 border bg-light">
+                        <p class="text-muted m-0">Không tìm thấy sản phẩm nào khớp với yêu cầu.</p>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var item in Model)
+                    {
+                        <div class="col-xl-4 col-md-6">
+                            <div class="simple-product-card">
+                                <div class="img-box">
+                                    <img src="~/images/@(string.IsNullOrEmpty(item.Photo) ? "no-image.png" : item.Photo)"
+                                         onerror="this.src='/images/no-image.png'" />
+                                </div>
+                                <div class="content-box">
+                                    <h6 class="product-title">@item.ProductName</h6>
+                                    <div class="price-box">
+                                        <span class="product-price">@item.Price.ToString("N0", culture) đ</span>
+                                    </div>
+                                    <div class="action-buttons mt-3">
+                                        <a href="@Url.Action("Details", "Product", new { id = item.ProductID })"
+                                           class="btn btn-sm btn-outline-dark flex-grow-1">CHI TIẾT</a>
+                                        <a href="@Url.Action("AddToCart", "Product", new { id = item.ProductID })"
+                                           class="btn btn-sm btn-dark flex-grow-1">MUA</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* 1. TẮT TÍNH NĂNG CHỚP CHỚP (TUYỆT ĐỐI TĨNH) */
+    * {
+        transition: none !important;
+        transform: none !important;
+        animation: none !important;
+        box-shadow: none !important;
+    }
+
+    body {
+        background-color: #fff;
+        color: #333;
+        font-family: 'Segoe UI', Arial, sans-serif;
+    }
+
+    /* 2. SIDEBAR PHẲNG & NÚT BẤM */
+    .simple-sidebar {
+        padding: 20px;
+        border: 1px solid #eee;
+        background: #fcfcfc;
+    }
+
+    .filter-title {
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #999;
+        letter-spacing: 1.5px;
+        margin-bottom: 12px;
+    }
+
+    .form-control, .form-select {
+        border-radius: 0;
+        border: 1px solid #ddd;
+        font-size: 0.9rem;
+    }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #000;
+            outline: none;
+        }
+
+    /* 3. CARD SẢN PHẨM PHẲNG */
+    .simple-product-card {
+        border: 1px solid #eee;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+    }
+
+        .simple-product-card:hover {
+            border-color: #000;
+        }
+
+    .img-box {
+        background: #f9f9f9;
+        aspect-ratio: 1/1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+        border-bottom: 1px solid #f5f5f5;
+    }
+
+        .img-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+    .content-box {
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+    }
+
+    .product-title {
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+        min-height: 2.4rem;
+        color: #333;
+        line-height: 1.4;
+    }
+
+    .product-price {
+        color: #d0021b;
+        font-weight: 800;
+        font-size: 1.05rem;
+    }
+
+    /* 4. ĐỊNH DẠNG NÚT VUÔNG */
+    .btn {
+        border-radius: 0;
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        padding: 10px 5px;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 4px;
+    }
+
+    /* Dọn dẹp các class rác cũ */
+    .card-overlay, .badge-new {
+        display: none !important;
+    }
+</style>

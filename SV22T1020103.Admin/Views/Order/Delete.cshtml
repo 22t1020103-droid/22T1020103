@@ -1,0 +1,41 @@
+﻿@model SV22T1020103.Models.Sales.OrderViewInfo
+@{
+    ViewBag.Title = "Xóa đơn hàng";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-0">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Xác nhận xóa đơn hàng
+                    </h5>
+                </div>
+
+                <div class="card-body text-center">
+                    <p class="fs-5 mb-4">
+                        Bạn có chắc chắn muốn <strong class="text-danger">xóa</strong> đơn hàng này không?
+                    </p>
+
+                    <form method="post" action="~/Order/Delete">
+                        <input type="hidden" name="orderID" value="@Model.OrderID" />
+
+                        <div class="d-flex justify-content-center gap-3">
+                            <button type="submit" class="btn btn-danger px-4">
+                                <i class="bi bi-trash"></i>
+                                Xóa
+                            </button>
+
+                            <a href="~/Order/Detail/@Model.OrderID" class="btn btn-secondary px-4">
+                                <i class="bi bi-arrow-left"></i>
+                                Hủy
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

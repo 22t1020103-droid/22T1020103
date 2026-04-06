@@ -1,0 +1,34 @@
+﻿@model SV22T1020103.Models.Catalog.Product
+@{
+    ViewData["Title"] = Model?.ProductName ?? "Chi tiết sản phẩm";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6 text-center">
+            @* SỬA: Model.Image thành Model.Photo *@
+            <img src="~/images/@(string.IsNullOrEmpty(Model?.Photo) ? "no-image.png" : Model.Photo)"
+                 class="img-fluid rounded shadow-sm" style="max-height: 400px;"
+                 onerror="this.src='https://placehold.co/600x400?text=Product+Image'">
+        </div>
+
+        <div class="col-md-6">
+            <h2 class="fw-bold">@Model?.ProductName</h2>
+
+            @* SỬA: CategoryName thành CategoryID (hoặc để trống nếu chưa Join) *@
+            <span class="badge bg-info text-dark mb-3">Mã loại: @Model?.CategoryID</span>
+
+            <h3 class="text-danger">@Model?.Price.ToString("N0") VNĐ</h3>
+            <hr />
+
+            @* SỬA: Model.Description thành Model.ProductDescription *@
+            <p class="text-muted">@Model?.ProductDescription</p>
+
+            <div class="mt-4">
+                @* SỬA: Model.ProductId thành Model.ProductID *@
+                <a href="@Url.Action("AddToCart", "Product", new { id = Model?.ProductID })" class="btn btn-success btn-lg px-5">Thêm vào giỏ</a>
+                <a href="@Url.Action("Index", "Product")" class="btn btn-light btn-lg">Quay lại</a>
+            </div>
+        </div>
+    </div>
+</div>

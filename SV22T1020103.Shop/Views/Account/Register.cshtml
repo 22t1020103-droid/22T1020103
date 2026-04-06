@@ -1,0 +1,49 @@
+﻿@model SV22T1020103.Models.Partner.Customer
+@{
+    ViewData["Title"] = "Đăng ký tài khoản";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5 col-sm-8">
+        <div class="card shadow border-0">
+            <div class="card-body p-4">
+                <h2 class="card-title text-center mb-4 fw-bold text-primary">ĐĂNG KÝ</h2>
+
+                @if (ViewBag.Error != null)
+                {
+                    <div class="alert alert-danger">
+                        <i class="fa-solid fa-circle-exclamation"></i> @ViewBag.Error
+                    </div>
+                }
+
+                <form asp-controller="Account" asp-action="Register" method="post">
+                    <div class="mb-3">
+                        <label asp-for="CustomerName" class="form-label fw-bold">Tên đăng nhập</label>
+                        <input asp-for="CustomerName" class="form-control" placeholder="Nhập tên đăng nhập" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label fw-bold">Email</label>
+                        <input asp-for="Email" type="email" class="form-control" placeholder="example@gmail.com" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label fw-bold">Mật khẩu</label>
+                        <input asp-for="Password" type="password" class="form-control" placeholder="Nhập mật khẩu" required />
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">Tạo tài khoản</button>
+                    </div>
+                </form>
+
+                <hr />
+
+                <p class="text-center mb-0">
+                    Đã có tài khoản?
+                    <a asp-controller="Account" asp-action="Login" class="text-decoration-none fw-bold">Đăng nhập ngay</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

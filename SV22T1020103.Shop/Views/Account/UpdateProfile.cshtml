@@ -1,0 +1,52 @@
+﻿@model SV22T1020103.Models.Partner.Customer
+@{
+    ViewBag.Title = "Cập nhật thông tin";
+}
+
+<div class="container mt-4">
+    <h2>Cập nhật hồ sơ cá nhân</h2>
+    <hr />
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger">@ViewBag.Error</div>
+    }
+
+    <form action="~/Account/UpdateProfile" method="post">
+        @* Input ẩn để giữ ID khách hàng khi submit *@
+        <input type="hidden" name="CustomerID" value="@Model.CustomerID" />
+
+        <div class="form-group mb-3">
+            <label>Họ và tên:</label>
+            <input type="text" class="form-control" name="CustomerName" value="@Model.CustomerName" required />
+        </div>
+
+        <div class="form-group mb-3">
+            <label>Tên giao dịch:</label>
+            <input type="text" class="form-control" name="ContactName" value="@Model.ContactName" />
+        </div>
+
+        <div class="form-group mb-3">
+            <label>Địa chỉ:</label>
+            <input type="text" class="form-control" name="Address" value="@Model.Address" />
+        </div>
+
+        <div class="form-group mb-3">
+            <label>Điện thoại:</label>
+            <input type="text" class="form-control" name="Phone" value="@Model.Phone" />
+        </div>
+
+        <div class="form-group mb-3">
+            <label>Email (Tài khoản):</label>
+            <input type="email" class="form-control" name="Email" value="@Model.Email" readonly />
+            <small class="text-muted">Email không được phép thay đổi.</small>
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">
+                <i class="fa fa-save"></i> Lưu thay đổi
+            </button>
+            <a href="~/Account/Profile" class="btn btn-default">Quay lại</a>
+        </div>
+    </form>
+</div>
