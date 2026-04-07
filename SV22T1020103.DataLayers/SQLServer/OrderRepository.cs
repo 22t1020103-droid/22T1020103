@@ -27,41 +27,50 @@ namespace SV22T1020103.DataLayers.SQLServer
         {
             using (var connection = OpenConnection())
             {
-                int rowCount;
-                List<OrderSearchInfo> data;
+                // Xử lý logic ngày kết thúc: Nếu chọn đến ngày 07/04, cần lấy đến 23:59:59 của ngày đó
+                DateTime? toDate = input.DateTo;
+                if (toDate.HasValue) toDate = toDate.Value.Date.AddDays(1).AddTicks(-1);
 
                 var sql = @"SELECT COUNT(*)
                             FROM Orders o
                             LEFT JOIN Customers c ON o.CustomerID = c.CustomerID
-                            WHERE c.CustomerName LIKE @searchValue;
+                            WHERE (@Status = 0 OR o.Status = @Status) 
+                              AND (c.CustomerName LIKE @searchValue)
+                              AND (@FromDate IS NULL OR o.OrderTime >= @FromDate)
+                              AND (@ToDate IS NULL OR o.OrderTime <= @ToDate);
 
-                            SELECT o.OrderID, o.OrderTime, c.CustomerName,
-                                   o.Status
+                            SELECT o.OrderID, o.OrderTime, c.CustomerName, o.Status
                             FROM Orders o
                             LEFT JOIN Customers c ON o.CustomerID = c.CustomerID
-                            WHERE c.CustomerName LIKE @searchValue
+                            WHERE (@Status = 0 OR o.Status = @Status)
+                              AND (c.CustomerName LIKE @searchValue)
+                              AND (@FromDate IS NULL OR o.OrderTime >= @FromDate)
+                              AND (@ToDate IS NULL OR o.OrderTime <= @ToDate)
                             ORDER BY o.OrderTime DESC
                             OFFSET (@page - 1) * @pageSize ROWS
                             FETCH NEXT @pageSize ROWS ONLY";
 
                 using (var multi = await connection.QueryMultipleAsync(sql, new
                 {
+                    Status = input.Status,
                     page = input.Page,
                     pageSize = input.PageSize,
-                    searchValue = "%" + input.SearchValue + "%"
+                    searchValue = "%" + (input.SearchValue ?? "") + "%",
+                    FromDate = input.DateFrom,
+                    ToDate = toDate
                 }))
                 {
-                    rowCount = multi.Read<int>().Single();
-                    data = multi.Read<OrderSearchInfo>().ToList();
-                }
+                    var rowCount = multi.Read<int>().Single();
+                    var data = multi.Read<OrderSearchInfo>().ToList();
 
-                return new PagedResult<OrderSearchInfo>()
-                {
-                    Page = input.Page,
-                    PageSize = input.PageSize,
-                    RowCount = rowCount,
-                    DataItems = data
-                };
+                    return new PagedResult<OrderSearchInfo>()
+                    {
+                        Page = input.Page,
+                        PageSize = input.PageSize,
+                        RowCount = rowCount,
+                        DataItems = data
+                    };
+                }
             }
         }
 
@@ -69,21 +78,26 @@ namespace SV22T1020103.DataLayers.SQLServer
         {
             using (var connection = OpenConnection())
             {
-                int rowCount;
-                List<OrderSearchInfo> data;
+                DateTime? toDate = input.DateTo;
+                if (toDate.HasValue) toDate = toDate.Value.Date.AddDays(1).AddTicks(-1);
 
                 var sql = @"SELECT COUNT(*)
                             FROM Orders o
                             LEFT JOIN Customers c ON o.CustomerID = c.CustomerID
                             WHERE o.CustomerID = @customerID
-                              AND c.CustomerName LIKE @searchValue;
+                              AND (@Status = 0 OR o.Status = @Status)
+                              AND (c.CustomerName LIKE @searchValue)
+                              AND (@FromDate IS NULL OR o.OrderTime >= @FromDate)
+                              AND (@ToDate IS NULL OR o.OrderTime <= @ToDate);
 
-                            SELECT o.OrderID, o.OrderTime, c.CustomerName,
-                                   o.Status
+                            SELECT o.OrderID, o.OrderTime, c.CustomerName, o.Status
                             FROM Orders o
                             LEFT JOIN Customers c ON o.CustomerID = c.CustomerID
                             WHERE o.CustomerID = @customerID
-                              AND c.CustomerName LIKE @searchValue
+                              AND (@Status = 0 OR o.Status = @Status)
+                              AND (c.CustomerName LIKE @searchValue)
+                              AND (@FromDate IS NULL OR o.OrderTime >= @FromDate)
+                              AND (@ToDate IS NULL OR o.OrderTime <= @ToDate)
                             ORDER BY o.OrderTime DESC
                             OFFSET (@page - 1) * @pageSize ROWS
                             FETCH NEXT @pageSize ROWS ONLY";
@@ -91,22 +105,25 @@ namespace SV22T1020103.DataLayers.SQLServer
                 using (var multi = await connection.QueryMultipleAsync(sql, new
                 {
                     customerID = customerID,
+                    Status = input.Status,
                     page = input.Page,
                     pageSize = input.PageSize,
-                    searchValue = "%" + input.SearchValue + "%"
+                    searchValue = "%" + (input.SearchValue ?? "") + "%",
+                    FromDate = input.DateFrom,
+                    ToDate = toDate
                 }))
                 {
-                    rowCount = multi.Read<int>().Single();
-                    data = multi.Read<OrderSearchInfo>().ToList();
-                }
+                    var rowCount = multi.Read<int>().Single();
+                    var data = multi.Read<OrderSearchInfo>().ToList();
 
-                return new PagedResult<OrderSearchInfo>()
-                {
-                    Page = input.Page,
-                    PageSize = input.PageSize,
-                    RowCount = rowCount,
-                    DataItems = data
-                };
+                    return new PagedResult<OrderSearchInfo>()
+                    {
+                        Page = input.Page,
+                        PageSize = input.PageSize,
+                        RowCount = rowCount,
+                        DataItems = data
+                    };
+                }
             }
         }
 
@@ -157,11 +174,7 @@ namespace SV22T1020103.DataLayers.SQLServer
                     WHERE o.OrderID = @orderID 
                       AND o.CustomerID = @customerID";
 
-                return await connection.QueryFirstOrDefaultAsync<OrderViewInfo>(sql, new
-                {
-                    customerID,
-                    orderID
-                });
+                return await connection.QueryFirstOrDefaultAsync<OrderViewInfo>(sql, new { customerID, orderID });
             }
         }
 
@@ -205,13 +218,10 @@ namespace SV22T1020103.DataLayers.SQLServer
             using (var connection = OpenConnection())
             {
                 var sql = @"
-            DELETE FROM OrderDetails WHERE OrderID = @orderID;
-            DELETE FROM Orders WHERE OrderID = @orderID;
-        ";
+                    DELETE FROM OrderDetails WHERE OrderID = @orderID;
+                    DELETE FROM Orders WHERE OrderID = @orderID;";
 
                 int result = await connection.ExecuteAsync(sql, new { orderID });
-
-                // Chỉ cần xóa được Order là OK
                 return result > 0;
             }
         }

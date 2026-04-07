@@ -4,6 +4,7 @@ using SV22T1020103.BusinessLayers;
 using SV22T1020103.Models.Catalog;
 using SV22T1020103.Models.Common;
 using SV22T1020103.Models.Sales;
+using System.Globalization;
 
 namespace SV22T1020103.Admin.Controllers
 {
@@ -58,7 +59,10 @@ namespace SV22T1020103.Admin.Controllers
             return RedirectToAction("Index");
         }
 
-        public async Task<IActionResult> SearchResult(int page = 1, string searchValue = "", OrderStatusEnum status = (OrderStatusEnum)0, string dateFrom = "", string dateTo = "")
+        /// <summary>
+        /// Tìm kiếm đơn hàng (Sửa tham số DateFrom, DateTo viết hoa để khớp với View)
+        /// </summary>
+        public async Task<IActionResult> SearchResult(int page = 1, string searchValue = "", OrderStatusEnum status = (OrderStatusEnum)0, string DateFrom = "", string DateTo = "")
         {
             var input = ApplicationContext.GetSessionData<OrderSearchInput>(ORDER_SEARCH);
             if (input == null)
@@ -70,12 +74,17 @@ namespace SV22T1020103.Admin.Controllers
             input.PageSize = PAGESIZE;
             input.SearchValue = searchValue ?? "";
             input.Status = status;
-            input.DateFrom = ParseDateString(dateFrom);
-            input.DateTo = ParseDateString(dateTo);
+
+            // Chuyển đổi chuỗi từ giao diện (dd/MM/yyyy) sang DateTime? để Repository dùng được
+            input.DateFrom = ParseDateString(DateFrom);
+            input.DateTo = ParseDateString(DateTo);
 
             ApplicationContext.SetSessionData(ORDER_SEARCH, input);
 
+            // Gọi hàm List đã được sửa ở trên
             var result = await SalesDataService.ListOrdersAsync(input);
+
+            // Lưu ý: Nếu SearchResult là PartialView để đổ vào div, hãy dùng return PartialView
             return View(result);
         }
 
@@ -111,7 +120,6 @@ namespace SV22T1020103.Admin.Controllers
                 };
             }
 
-            // Gợi ý danh sách khách hàng ban đầu
             var customerInput = new PaginationSearchInput() { Page = 1, PageSize = 20, SearchValue = "" };
             var customers = await PartnerDataService.ListCustomersAsync(customerInput);
             ViewBag.InitialCustomers = customers.DataItems;
@@ -172,7 +180,7 @@ namespace SV22T1020103.Admin.Controllers
         public IActionResult ShowCart()
         {
             var cart = ShoppingCartHelper.GetShoppingCart();
-            return View(cart); // Đảm bảo bạn có file View/Order/ShowCart.cshtml (PartialView)
+            return View(cart);
         }
 
         public async Task<IActionResult> AddCartItem(int productId = 0, int quantity = 0, decimal price = 0)
@@ -241,8 +249,6 @@ namespace SV22T1020103.Admin.Controllers
             catch { return Json(new { code = 0, message = "Lỗi khi tạo đơn hàng" }); }
         }
 
-        // --- CÁC HÀM XỬ LÝ TRẠNG THÁI (DỮ NGUYÊN LOGIC CŨ) ---
-
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
@@ -285,7 +291,7 @@ namespace SV22T1020103.Admin.Controllers
         [HttpPost, ActionName("Accept")]
         public async Task<IActionResult> AcceptPost(int orderID)
         {
-            await SalesDataService.AcceptOrderAsync(orderID, 1); // 1: EmployeeID giả định
+            await SalesDataService.AcceptOrderAsync(orderID, 1);
             return RedirectToAction("Detail", new { id = orderID });
         }
 
@@ -321,10 +327,26 @@ namespace SV22T1020103.Admin.Controllers
             return RedirectToAction("Detail", new { id = orderID });
         }
 
+        /// <summary>
+        /// Hàm hỗ trợ chuyển đổi chuỗi ngày thành DateTime? (DUY NHẤT 1 HÀM)
+        /// </summary>
         private DateTime? ParseDateString(string dateString)
         {
             if (string.IsNullOrWhiteSpace(dateString)) return null;
-            if (DateTime.TryParse(dateString, out var result)) return result;
+
+            // Ưu tiên định dạng dd/MM/yyyy
+            if (DateTime.TryParseExact(dateString, "dd/MM/yyyy",
+                CultureInfo.InvariantCulture, DateTimeStyles.None, out var result))
+            {
+                return result;
+            }
+
+            // Nếu không đúng, thử định dạng mặc định của hệ thống
+            if (DateTime.TryParse(dateString, out var fallbackResult))
+            {
+                return fallbackResult;
+            }
+
             return null;
         }
     }

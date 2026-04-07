@@ -14,7 +14,7 @@
         <div class="table-responsive">
             <table class="table table-bordered table-hover table-striped mb-0 align-middle">
                 <thead>
-                    <tr>
+                    <tr class="bg-primary text-white">
                         <th style="width:80px" class="text-center">STT</th>
                         <th>Mã đơn</th>
                         <th>Ngày lập</th>
@@ -67,85 +67,37 @@
         {
             <ul class="pagination pagination-sm mb-0">
                 <li class="page-item @(currentPage == 1 ? "disabled" : "")">
-                    <a class="page-link"
-                       href="javascript:void(0)"
+                    <a class="page-link" href="javascript:void(0)"
                        onclick="if(@currentPage > 1) paginationSearch(null, document.getElementById('formSearch'), @(currentPage - 1))">
                         «
                     </a>
                 </li>
 
-                @if (currentPage > 3)
-                {
-                    <li class="page-item">
-                        <a class="page-link"
-                           href="javascript:void(0)"
-                           onclick="paginationSearch(null, document.getElementById('formSearch'), 1)">1</a>
-                    </li>
-                    @if (currentPage > 4)
-                    {
-                        <li class="page-item disabled">
-                            <span class="page-link">...</span>
-                        </li>
-                    }
-                }
-
                 @{
-                    int startPage = currentPage - 2;
-                    int endPage = currentPage + 2;
+                    int startPage = Math.Max(1, currentPage - 2);
+                    int endPage = Math.Min(pageCount, currentPage + 2);
 
-                    if (startPage < 1)
-                    {
-                        startPage = 1;
-                        endPage = Math.Min(5, pageCount);
-                    }
-
-                    if (endPage > pageCount)
-                    {
-                        endPage = pageCount;
-                        startPage = Math.Max(1, pageCount - 4);
-                    }
+                    if (startPage == 1) endPage = Math.Min(5, pageCount);
+                    if (endPage == pageCount) startPage = Math.Max(1, pageCount - 4);
                 }
 
                 @for (int p = startPage; p <= endPage; p++)
                 {
-                    if (p == currentPage)
-                    {
-                        <li class="page-item active">
+                    <li class="page-item @(p == currentPage ? "active" : "")">
+                        @if (p == currentPage)
+                        {
                             <span class="page-link">@p</span>
-                        </li>
-                    }
-                    else
-                    {
-                        <li class="page-item">
-                            <a class="page-link"
-                               href="javascript:void(0)"
-                               onclick="paginationSearch(null, document.getElementById('formSearch'), @p)">
-                                @p
-                            </a>
-                        </li>
-                    }
-                }
-
-                @if (currentPage < pageCount - 2)
-                {
-                    @if (currentPage < pageCount - 3)
-                    {
-                        <li class="page-item disabled">
-                            <span class="page-link">...</span>
-                        </li>
-                    }
-                    <li class="page-item">
-                        <a class="page-link"
-                           href="javascript:void(0)"
-                           onclick="paginationSearch(null, document.getElementById('formSearch'), @pageCount)">
-                            @pageCount
-                        </a>
+                        }
+                        else
+                        {
+                            <a class="page-link" href="javascript:void(0)"
+                               onclick="paginationSearch(null, document.getElementById('formSearch'), @p)">@p</a>
+                        }
                     </li>
                 }
 
                 <li class="page-item @(currentPage == pageCount ? "disabled" : "")">
-                    <a class="page-link"
-                       href="javascript:void(0)"
+                    <a class="page-link" href="javascript:void(0)"
                        onclick="if(@currentPage < @pageCount) paginationSearch(null, document.getElementById('formSearch'), @(currentPage + 1))">
                         »
                     </a>
